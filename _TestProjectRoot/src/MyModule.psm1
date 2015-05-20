@@ -1,4 +1,4 @@
-Function Test-Test {
+Function Get-Nothing {
 		<#
 		.SYNOPSIS
 			A Test
@@ -8,7 +8,7 @@ Function Test-Test {
 			Test-Test
 			A test that does nothing
 		#>
-
+		Write-Verbose "I Didn't do anything."
 }
 
-Export-ModuleMember Test-Test
+Export-ModuleMember Get-Nothing

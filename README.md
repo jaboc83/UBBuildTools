@@ -45,7 +45,8 @@ mkdir tests
 ```
 
 Create a new psproj.json file in the new project directory and add the following to the file.
-Update to use your information.
+*Update to use your information*.
+
 ```json
 {
 	"projectName": "My Fancy New Project",
@@ -62,7 +63,6 @@ Update to use your information.
 	"dist": "dist",
 	"tests": "tests"
 }
-
 ```
 * The src, dist, and tests properties represent the three project directories created earlier
 and can be overridden to point to any relative path e.g. "dist": "Bin" would indicate that the
@@ -82,3 +82,18 @@ Add any powershell tests with the format *.Test.ps1 to the tests directory
 
 Run the Invoke-PSBuild command to build the zip package for your module. See Get-Help Invoke-PSBuild for more details.
 
+**Misc:**
+
+For more information about the module see:
+```PowerShell
+Get-Help about_UnsignedBytes.BuildTools
+```
+
+Each of the build stages are exposed through the modules as well as the main Invoke-PSBuild Cmdlet. 
+Use the following to see all available Cmdlets:
+
+```PowerShell
+Get-Command -Module UnsignedBytes.BuildTools
+```
+
+Use Get-Help to view the help file for any specific Cmdlet.

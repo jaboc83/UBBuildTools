@@ -11,6 +11,9 @@ Function Get-PSProjectProperties {
 		src and dist folders will be assumed.
 	.PARAMETER ProjectRoot
 		The root path to the powershell project
+	.EXAMPLE
+		Get-PSProjectProperties -ProjectRoot ./project/path/
+		Gets the PowerShell project property data from the project at ./project/path
 	#>
 	[CmdletBinding()]
 	param (
@@ -72,11 +75,11 @@ Function New-DistributionDirectory {
 	.PARAMETER ProjectData
 		A set of PowerShell project data that describes the project
 	.EXAMPLE
+		New-DistributionDirectory $psProjectData
 		Rebuild the distribution directory from a psproj dataset
-			New-DistributionDirectory $psProjectData
 	.EXAMPLE
+		New-DistributionDirectory C:\projects\PowerShellProjectTestA\
 		Rebuild the distribution directory for the project at the path specified
-			New-DistributionDirectory C:\projects\PowerShellProjectTestA\
 	#>
 	[CmdletBinding()]
 	param (
@@ -106,8 +109,8 @@ Function New-ModuleManifestFromProjectData {
 	.PARAMETER ModuleName
 		The name of the module the manifest is for minus the extension
 	.EXAMPLE
+		New-ModuleManifestFromProjectData -ProjectData $projData -ModuleName MyModule
 		Create a manifest for the file MyModule.psm1
-			New-ModuleManifestFromProjectData -ProjectData $projData -ModuleName MyModule
 	#>
 	[CmdletBinding()]
 	param (
@@ -145,6 +148,7 @@ Function New-ModuleManifestFromProjectData {
 	New-ModuleManifest `
 		-Path (Join-Path $modulePath "$ModuleName.psd1") `
 		-ModuleVersion $version `
+		-RootModule "$ModuleName.psm1" `
 		-Guid $uniqueId `
 		-Author $authors `
 		-CompanyName $companyName `
@@ -168,8 +172,8 @@ Function Invoke-ScriptCop {
 	.PARAMETER ModuleName
 		The name of the Module you would like to analyze
 	.EXAMPLE
+		Invoke-ScriptCop MyModule
 		Analyze MyModule.psm1 which has been already been loaded.
-			Invoke-ScriptCop MyModule
 	#>
 	[CmdletBinding()]
 	param (
@@ -200,8 +204,8 @@ Function Export-Artifacts {
 	.PARAMETER ModuleName
 		The name of the Module you would like to analyze
 	.EXAMPLE
+		Export-Artifacts -ProjectData $projData -ModuleName MyModule
 		Export the artifacts for the project
-			Export-Artifacts -ProjectData $projData -ModuleName MyModule
 	#>
 	[CmdletBinding()]
 	param (
@@ -251,8 +255,8 @@ Function Invoke-Tests {
 	.PARAMETER ProjectData
 		A set of PowerShell project data that describes the project
 	.EXAMPLE
+		Invoke-Tests -ProjectData $projData
 		Run all the tests for the project
-			Invoke-Tests -ProjectData $projData
 	#>
 	[CmdletBinding()]
 	param (
@@ -283,8 +287,8 @@ Function Invoke-PSBuild {
 	.PARAMETER $ModuleName
 		The name of the module to be built from the project
 	.EXAMPLE
+		Invoke-PSBuild -ProjectRoot ./MyProject/ -ModuleName MyModule
 		Run a full build on MyModule.psm1
-			Invoke-PSBuild -ProjectRoot ./MyProject/ -ModuleName MyModule
 	#>
 	[CmdletBinding()]
 	param (

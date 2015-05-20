@@ -2,7 +2,7 @@
 	"projectName": "Build Tools",
 	"uniqueId": "81159fd3-d96a-4176-83e1-e403c79f3052",
 	"companyName": "UnsignedBytes, LLC",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "A set of PowerShell helper utilities building/bundling/testing powershell modules",
 	"authors": [
 		"Jake Moening <jmoening@unsignedbytes.com>"

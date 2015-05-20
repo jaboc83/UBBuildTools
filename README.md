@@ -17,7 +17,8 @@ you don't want to build the artifacts yourself.
 Prerequisites: ScriptCop (http://scriptcop.start-automating.com/)
 
 ```PowerShell
-cd ./PSBuild/
+git clone https://github.com/unsignedbytes/UBBuildTools/
+cd ./UBBuildTools/
 ipmo ./src/UBBuildTools.psm1 
 Invoke-PSBuild -ProjectRoot ./ -ModuleName UBBuildTools
 ```

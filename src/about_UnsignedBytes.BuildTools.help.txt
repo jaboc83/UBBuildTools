@@ -1,5 +1,5 @@
 TOPIC
-	about_UBBuildTools
+	about_UnsignedBytes.BuildTools
 
 SHORT DESCRIPTION
 	UnsignedBytes Powershell module builder utility
@@ -10,8 +10,8 @@ LONG DESCRIPTION
 	It will also allow you to run your Module Tests and ScriptCop.
 
 EXAMPLES
+	Invoke-PSBuild -ProjectRoot "./project/path/" -ModuleName MyModule
 	Build a PowerShell Project
-		Invoke-PSBuild -ProjectRoot "./project/path/" -ModuleName MyModule
 
 KEYWORDS
 	Build, Release, Tools, Utils, ScriptCop, Tests, Zip, Artifacts

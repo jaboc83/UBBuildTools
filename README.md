@@ -1,7 +1,7 @@
-# UnsignedBytes UBBuildTools
+# UnsignedBytes BuildTools
 ## PowerShell Build Tools for managing script projects
 
-The UnsignedBytes UBBuildTools provides a way to manage your PS Modules
+The UnsignedBytes BuildTools provides a way to manage your PS Modules
 using a consistant structure and allows testing, static analysis through
 ScriptCop, dynamically generated manifest files, and packages your scripts
 into a convenient zip file for transport. The entire configuration of the 
@@ -11,24 +11,26 @@ your project allowing the build to remain flexible.
 **To Build:**
 
 Building the project is not required to use it. you can just download the 
-zip file for the version you would like from the dist folder on this repository if
+zip file for the version you would like from the location listed below if 
 you don't want to build the artifacts yourself.
+
+[Download Latest Stable Release (v0.1.3)](https://github.com/unsignedbytes/UBBuildTools/raw/master/dist/UnsignedBytes.BuildTools-0.1.3.zip)
 
 Prerequisites: ScriptCop (http://scriptcop.start-automating.com/)
 
 ```PowerShell
 git clone https://github.com/unsignedbytes/UBBuildTools/
 cd ./UBBuildTools/
-ipmo ./src/UBBuildTools.psm1 
-Invoke-PSBuild -ProjectRoot ./ -ModuleName UBBuildTools
+ipmo ./src/UnsignedBytes.BuildTools.psm1 
+Invoke-PSBuild -ProjectRoot ./ -ModuleName UnsignedBytes.BuildTools
 ```
 
 **To Install:**
 
-Grab the latest UBBuildTools-x.x.x.zip file to get all the required
+Grab the latest UnsignedBytes.BuildTools-x.x.x.zip file to get all the required
 artifacts and unzip the contents to:
 ```PowerShell
-%UserProfile%\Documents\WindowsPowerShell\Modules 
+%UserProfile%\Documents\WindowsPowerShell\Modules\UnsignedBytes.BuildTools\
 ```
 
 **Create a Project File:**
@@ -68,9 +70,9 @@ Bin directory should be used to hold your distributable artifacts after a build.
 
 * The uniqueId field is a unique identifier that will be used in the psd1 manifest file.
 
-**Add Your Module and about_ files:**
+**Add Your Module and about_* files:**
 
-Add your .psm1 files and about_ help files into the src directory.
+Add your .psm1 files and about_* help files into the src directory.
 
 **Add Tests:**
 

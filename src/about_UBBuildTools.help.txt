@@ -1,0 +1,20 @@
+TOPIC
+	about_UBBuildTools
+
+SHORT DESCRIPTION
+	UnsignedBytes Powershell module builder utility
+
+LONG DESCRIPTION
+	This set of utility functions allow you to build a 
+	nice zipfile of your modules, manifests and help files.
+	It will also allow you to run your Module Tests and ScriptCop.
+
+EXAMPLES
+	Build a PowerShell Project
+		Invoke-PSBuild -ProjectRoot "./project/path/" -ModuleName MyModule
+
+KEYWORDS
+	Build, Release, Tools, Utils, ScriptCop, Tests, Zip, Artifacts
+
+SEE ALSO
+	N/A

@@ -1,0 +1,17 @@
+{
+	"projectName": "Test Project",
+	"uniqueId": "525222de-a3d1-48ef-8055-510e4c681be4",
+	"companyName": "MyCompany, Inc.",
+	"version": "1.2.3",
+	"description": "Test Project Description",
+	"authors": [
+		"Jim Bob",
+		"Joe Test"
+	],
+	"dotNetVersion": "4.5",
+	"powerShellVersion": "4.0",
+	"src": "src",
+	"dist": "dist",
+	"tests": "tests"
+}
+

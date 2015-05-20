@@ -152,7 +152,7 @@ Function New-ModuleManifestFromProjectData {
 		-Description $description  `
 		-PowerShellVersion $psVersion `
 		-DotNetFrameworkVersion $dnVersion `
-		-NestedModules (Get-ChildItem  $searchPath -Exclude *.psd1,*.tests.ps1 | ForEach Name )
+		-NestedModules (Get-ChildItem  $searchPath -Filter *.psm1 -Exclude "$ModuleName.psm1" | ForEach Name )
 }
 
 Function Invoke-ScriptCop {

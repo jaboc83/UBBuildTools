@@ -61,6 +61,9 @@ Function Test-GetPSProjectProperties {
 	if ($data.ModuleNames -NotContains $modName) {
 		throw "Module Name not found in project data"
 	}
+    if ($data.RootModule -ne $modName) {
+		throw "Root Module not found in project data"
+	}
     Write-Output "Data retrieved from psproj file."
 
 	# cleanup
@@ -92,7 +95,7 @@ Function Test-NewModuleManifestFromProjectData {
 	}
 
 	## ACT
-	New-ModuleManifestFromProjectData -ModuleName $modName -ProjectData (Get-PSProjectProperties -ProjectRoot $projRoot)
+	New-ModuleManifestFromProjectData -ProjectData (Get-PSProjectProperties -ProjectRoot $projRoot)
 
 	## ASSERT
 	if((Test-Path $manifestFile) -eq $False) {
@@ -127,7 +130,7 @@ Function Test-ExportArtifacts {
 	}
 
 	## ACT
-	Export-Artifacts -ProjectData (Get-PSProjectProperties $projRoot) -ModuleName $modName
+	Export-Artifacts -ProjectData (Get-PSProjectProperties $projRoot) 
 
 	## ASSERT
 	if (Test-Path "$dist/$modName-$modVersion.zip") {
@@ -160,7 +163,7 @@ Function Test-InvokeBuild {
 	Import-Module "$src/$buildTools.psm1"
 
 	## ACT
-	Invoke-PSBuild -ProjectRoot $projRoot -ModuleName $modName
+	Invoke-PSBuild -ProjectRoot $projRoot 
 
 	## ASSERT
 	Write-Output "Build Completed."

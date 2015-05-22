@@ -1,3 +1,4 @@
+#region Functions
 Function Get-PSProjectProperties {
 	<#
 	.SYNOPSIS
@@ -6,9 +7,6 @@ Function Get-PSProjectProperties {
 		This function looks in the specified project directory
 		for the psproj.json file to create a set of project data that
 		describes the project.
-
-		If a src and dist property are not specified then the default
-		src and dist folders will be assumed.
 	.PARAMETER ProjectRoot
 		The root path to the powershell project
 	.EXAMPLE
@@ -17,35 +15,32 @@ Function Get-PSProjectProperties {
 	#>
 	[CmdletBinding()]
 	param (
-		[Parameter( Mandatory=$True, ValueFromPipeline=$True)]
+		[Parameter(
+			Mandatory=$True,
+			ValueFromPipeline=$True
+		)]
+		[ValidateScript({ Test-Path "$_/psproj.json" })]
 		[string] $ProjectRoot
 	)
 	PROCESS {
 
 		# Check for psproj.json file first.
 		$projFilePath = "$ProjectRoot/psproj.json"
-		if (Test-Path $projFilePath) {
-			$projData = (Get-Content $projFilePath) -join "`n" | ConvertFrom-Json
-			$src = (Join-Path "$ProjectRoot" $projData.src)
-			$dist = (Join-Path "$ProjectRoot" $projData.dist)
-			$tests = (Join-Path "$ProjectRoot" $projData.tests)
-			$authors = ($projData.authors -join ", ")
-			$description = $projData.description
-			$dotNetVersion = $projData.dotNetVersion
-			$powerShellVersion = $projData.powerShellVersion
-			$moduleVersion = $projData.version
-			$projectName = $projData.projectName
-			$companyName = $projData.companyName
-			$uniqueId = $projData.uniqueId
-			$moduleNames = Get-ChildItem $ProjectRoot `
-				-Recurse -Filter *.psm1 | ForEach BaseName
-		} else {
-			# PowerShell project source folder
-			$src = (Join-Path $ProjectRoot 'src')
-			# PowerShell project distribution (artifacts) folder
-			$dist = (Join-Path $ProjectRoot 'dist')
-		}
-
+		$projData = (Get-Content $projFilePath) -join "`n" | ConvertFrom-Json
+		$src = (Join-Path "$ProjectRoot" $projData.src)
+		$dist = (Join-Path "$ProjectRoot" $projData.dist)
+		$tests = (Join-Path "$ProjectRoot" $projData.tests)
+		$authors = ($projData.authors -join ", ")
+		$description = $projData.description
+		$dotNetVersion = $projData.dotNetVersion
+		$powerShellVersion = $projData.powerShellVersion
+		$moduleVersion = $projData.version
+		$projectName = $projData.projectName
+		$companyName = $projData.companyName
+		$uniqueId = $projData.uniqueId
+		$rootModule = $projData.rootModule
+		$moduleNames = Get-ChildItem $ProjectRoot `
+			-Recurse -Filter *.psm1 | ForEach BaseName
 		@{
 			"UniqueIdentifier" = $uniqueId;
 			"DistributionPath" = $dist;
@@ -59,7 +54,8 @@ Function Get-PSProjectProperties {
 			"ModuleVersion" = $moduleVersion;
 			"ProjectName" = $projectName;
 			"ProjectRoot" = $ProjectRoot;
-			"ModuleNames" = $moduleNames
+			"ModuleNames" = $moduleNames;
+			"RootModule" = $rootModule
 		}
 	}
 }
@@ -106,27 +102,17 @@ Function New-ModuleManifestFromProjectData {
 		Note: The module name must match the .asm1 file name
 	.PARAMETER ProjectData
 		A set of PowerShell project data that describes the project
-	.PARAMETER ModuleName
-		The name of the module the manifest is for minus the extension
 	.EXAMPLE
-		New-ModuleManifestFromProjectData -ProjectData $projData -ModuleName MyModule
+		New-ModuleManifestFromProjectData -ProjectData
 		Create a manifest for the file MyModule.psm1
 	#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory=$True)]
-		[hashtable] $ProjectData,
-		[Parameter(Mandatory=$True)]
-		[string] $ModuleName
+		[hashtable] $ProjectData
 	)
 
-	# Deal with file exensions if they are passed on accident
-	$ModuleName = $ModuleName.Replace(".psm1", "")
-
-	# Verify the moduleName is valid based on the project info
-	if ($ProjectData.ModuleNames -NotContains $ModuleName) {
-		throw "Invalid Module Name ($ModuleName) for this project"
-	}
+	$ModuleName = $ProjectData.RootModule
 
 	$modulePath = Get-ChildItem $ProjectData.ProjectRoot -Filter "$ModuleName.psm1" -Recurse | Select -ExpandProperty FullName -First 1 | Split-Path
 	$searchPath = if ($ProjectData.SourcePath -ne $null) { $ProjectData.SourcePath } else { $manifestOutputPath }
@@ -180,10 +166,11 @@ Function Invoke-ScriptCop {
 		[Parameter(Mandatory=$True)]
 		[string] $ModuleName
 	)
-
 	if (Get-Command Test-Command -errorAction SilentlyContinue)
 	{
-		Get-Module -Name $ModuleName | Test-Command
+		Get-Module -Name $ModuleName | Test-Command | Where {
+			$_.Problem -notmatch "does not define any #regions"
+		}
 	}
 	else
 	{
@@ -201,35 +188,24 @@ Function Export-Artifacts {
 		artifacts
 	.PARAMETER ProjectData
 		A set of PowerShell project data that describes the project
-	.PARAMETER ModuleName
-		The name of the Module you would like to analyze
 	.EXAMPLE
-		Export-Artifacts -ProjectData $projData -ModuleName MyModule
+		Export-Artifacts -ProjectData $projData
 		Export the artifacts for the project
 	#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData,
-		[Parameter(Mandatory=$True)]
-		[string] $ModuleName
+
+        [string] $ArtifactSource
 	)
-	$temporaryArtifacts = "./temp"
-
-	# Create the temporary artifacts directory
-	if (Test-Path "$temporaryArtifacts") {
-		Remove-Item "$temporaryArtifacts" -Force -Recurse
+    $temp = "$($ProjectData.ProjectRoot)\temp"
+    if ((Test-Path $temp) -eq $False) {
+		New-Item -Type Directory $temp
 	}
-	New-Item "$temporaryArtifacts" -ItemType Directory | Out-Null
-
-	# Copy the distributable files to the dist folder.
-	Copy-Item -Path "$($ProjectData.SourcePath)\*" `
-			-Destination "$temporaryArtifacts" `
-			-Recurse
-	$manifestFileName = "$ModuleName.psd1"
 	# Requires .NET 4.5
 	[Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem") | Out-Null
-	$zipFileName = (Join-Path (Convert-Path $ProjectData.DistributionPath) "$([System.IO.Path]::GetFileNameWithoutExtension($manifestFileName))-$($ProjectData.ModuleVersion).zip")
+	$zipFileName = (Join-Path (Convert-Path $ProjectData.DistributionPath) "$($ProjectData.RootModule)-$($ProjectData.ModuleVersion).zip")
 
 	# Overwrite the ZIP if it already already exists.
 	if (Test-Path $zipFileName) {
@@ -237,9 +213,9 @@ Function Export-Artifacts {
 	}
 	$compressionLevel = [System.IO.Compression.CompressionLevel]::Optimal
 	$includeBaseDirectory = $false
-	[System.IO.Compression.ZipFile]::CreateFromDirectory((Convert-Path $temporaryArtifacts), $zipFileName, $compressionLevel, $includeBaseDirectory)
-	if (Test-Path "$temporaryArtifacts") {
-		Remove-Item "$temporaryArtifacts" -Force -Recurse
+	[System.IO.Compression.ZipFile]::CreateFromDirectory((Convert-Path $temp), $zipFileName, $compressionLevel, $includeBaseDirectory)
+	if (Test-Path $temp) {
+		Remove-Item $temp -Force -Recurse
 	}
 
 }
@@ -267,11 +243,37 @@ Function Invoke-Tests {
         Import-Module $_.FullName
     }
 	Get-ChildItem $ProjectData.TestsPath *.Test.ps1 | ForEach {
-		Write-Output (Invoke-Expression $_.FullName)
+		Invoke-Expression $_.FullName
 	}
     Get-ChildItem $ProjectData.SourcePath *.psm1 -Recurse | ForEach {
-        Remove-Module ([System.IO.Path]::GetFileNameWithoutExtension($_.FullName))
+        $mname = [System.IO.Path]::GetFileNameWithoutExtension($_.FullName)
+        if(Get-Module $mname) {
+            Remove-Module $mname
+        }
     }
+}
+
+Function Copy-Artifacts {
+	<#
+	.SYNOPSIS
+		Copy the project artifacts to the specified directory
+	.DESCRIPTION
+	#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory=$True)]
+		[hashtable] $ProjectData
+	)
+    $temp = "$($ProjectData.ProjectRoot)\temp"
+	if ((Test-Path $temp) -eq $False) {
+		New-Item -Type Directory $temp
+	}
+
+	Copy-Item `
+		-Include *.psm1,*psd1,*ps1,*.help.txt `
+		-Path $ProjectData.SourcePath `
+		-Destination "$temp\$($ProjectData.RootModule)" `
+		-Recurse
 }
 
 Function Invoke-PSBuild {
@@ -284,42 +286,57 @@ Function Invoke-PSBuild {
 		artifacts dropping them in the distributable directory
 	.PARAMETER $ProjectRoot
 		The path to the root of the PowerShell project where the psproj.json lives
-	.PARAMETER $ModuleName
-		The name of the module to be built from the project
 	.EXAMPLE
-		Invoke-PSBuild -ProjectRoot ./MyProject/ -ModuleName MyModule
+		Invoke-PSBuild -ProjectRoot ./MyProject/
 		Run a full build on MyModule.psm1
 	#>
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory=$True)]
-		[string] $ProjectRoot,
-		[Parameter(Mandatory=$True)]
-		[string] $ModuleName
+		[string] $ProjectRoot = "./"
 	)
+
 	Write-Verbose "Getting Project Data..."
 	$projData = Get-PSProjectProperties -ProjectRoot $ProjectRoot
 	Write-Verbose "Invoking Project Tests..."
 	Invoke-Tests -ProjectData $projData
-	$modulePath = Get-ChildItem -Recurse -Filter "$ModuleName.psm1" $projData.ProjectRoot |
+	$modulePath = Get-ChildItem -Recurse -Filter "$($projData.RootModule).psm1" $projData.ProjectRoot |
 		Select -ExpandProperty FullName
-	Import-Module $modulePath
-	Write-Verbose "Invoking Static Analysis..."
-	Invoke-ScriptCop -ModuleName $ModuleName
-	Remove-Module $ModuleName
+    if((Get-Module $projData.RootModule) -eq $null) {
+        Import-Module $modulePath
+    }
 	Write-Verbose "Creating Output Directory..."
 	New-DistributionDirectory -ProjectData $projData
 	Write-Verbose "Creating Manifest File..."
-	New-ModuleManifestFromProjectData -ProjectData $projData -ModuleName $ModuleName
+	New-ModuleManifestFromProjectData -ProjectData $projData
+	Write-Verbose "Copying Artifacts to dist folder..."
+	Copy-Artifacts -ProjectData $projData
+	Write-Verbose "Invoking Static Analysis..."
+	# Add the temp directory to the module path temporarily for the script cop
+	$env:PSModulePath = "$($env:PSModulePath);$(Resolve-Path "$ProjectRoot\temp")"
+	Invoke-ScriptCop -ModuleName $projData.RootModule
 	Write-Verbose "Zipping Up Artifacts..."
-	Export-Artifacts -ProjectData $projData -ModuleName $ModuleName
-}
+	Export-Artifacts -ProjectData $projData
 
-# Export Public Functions for the Module
-Export-ModuleMember Get-PSProjectProperties
-Export-ModuleMember New-DistributionDirectory
-Export-ModuleMember New-ModuleManifestFromProjectData
-Export-ModuleMember Invoke-ScriptCop
-Export-ModuleMember Export-Artifacts
-Export-ModuleMember Invoke-Tests
-Export-ModuleMember Invoke-PSBuild
+	# Cleanup
+	#Remove-item -Exclude *.zip $($projData.ProjectRoot)/tmp
+}
+#endregion
+
+#region Aliases
+Set-Alias psbuild Invoke-PSBuild
+#endregion
+
+#region Export Public Functions for the Module
+Export-ModuleMember -Function Get-PSProjectProperties
+Export-ModuleMember -Function Copy-Artifacts
+Export-ModuleMember -Function Export-Artifacts
+Export-ModuleMember -Function New-DistributionDirectory
+Export-ModuleMember -Function New-ModuleManifestFromProjectData
+Export-ModuleMember -Function Invoke-ScriptCop
+Export-ModuleMember -Function Invoke-Tests
+Export-ModuleMember -Function Invoke-PSBuild
+#endregion
+
+#region Export Aliases
+Export-ModuleMember -Alias psbuild
+#endregion

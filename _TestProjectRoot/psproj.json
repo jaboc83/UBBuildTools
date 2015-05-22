@@ -1,5 +1,6 @@
 {
 	"projectName": "Test Project",
+	"rootModule": "MyModule",
 	"uniqueId": "525222de-a3d1-48ef-8055-510e4c681be4",
 	"companyName": "MyCompany, Inc.",
 	"version": "1.2.3",

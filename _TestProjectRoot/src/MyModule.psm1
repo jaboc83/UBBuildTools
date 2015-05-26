@@ -3,12 +3,17 @@ Function Get-Nothing {
 		.SYNOPSIS
 			A Test
 		.DESCRIPTION
-			A TEST
+			A TEST that does nothing at all
 		.EXAMPLE
-			Test-Test
+			Get-Nothing
 			A test that does nothing
 		#>
-		Write-Verbose "I Didn't do anything."
+		[OutputType([string])]
+		param (
+		)
+		$text = "I Didn't do anything."
+		Write-Verbose $text
+		Write-Out $text
 }
 
 Export-ModuleMember Get-Nothing

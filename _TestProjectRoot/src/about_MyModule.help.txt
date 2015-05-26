@@ -1,0 +1,18 @@
+TOPIC
+	about_MyModule
+
+SHORT DESCRIPTION
+	A Module for testing the Powershell Build process
+
+LONG DESCRIPTION
+	This module is only used for testing purposes
+
+EXAMPLES
+	Get-Nothing
+	This does nothing
+
+KEYWORDS
+	Test
+
+SEE ALSO
+	N/A

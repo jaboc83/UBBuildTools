@@ -137,6 +137,7 @@ Function New-ModuleManifestFromProjectData {
 		-RootModule "$ModuleName.psm1" `
 		-Guid $uniqueId `
 		-Author $authors `
+		-FileList @() `
 		-CompanyName $companyName `
 		-Copyright "(c) $((Get-Date).Year) $companyName All rights reserved.' " `
 		-Description $description  `
@@ -169,7 +170,8 @@ Function Invoke-ScriptCop {
 	if (Get-Command Test-Command -errorAction SilentlyContinue)
 	{
 		Get-Module -Name $ModuleName | Test-Command | Where {
-			$_.Problem -notmatch "does not define any #regions"
+			$_.Problem -notmatch "does not define any #regions" -and `
+			$_.Problem -notmatch "No command is an island\.  Please add at least one \.LINK"
 		}
 	}
 	else
@@ -268,10 +270,14 @@ Function Copy-Artifacts {
 	if ((Test-Path $temp) -eq $False) {
 		New-Item -Type Directory $temp
 	}
+    $modPath = "$temp\$($ProjectData.RootModule)"
+    if ((Test-Path $modPath) -eq $False) {
+		New-Item -Type Directory $modPath
+	}
 
 	Copy-Item `
 		-Include *.psm1,*psd1,*ps1,*.help.txt `
-		-Path $ProjectData.SourcePath `
+		-Path "$($ProjectData.SourcePath)\*" `
 		-Destination "$temp\$($ProjectData.RootModule)" `
 		-Recurse
 }

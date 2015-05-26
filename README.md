@@ -2,11 +2,13 @@
 ## PowerShell Build Tools for managing script projects
 
 The UnsignedBytes BuildTools provides a way to manage your PS Modules
-using a consistant structure and allows testing, static analysis through
-ScriptCop, dynamically generated manifest files, and packages your scripts
+using a consistant structure and allows testing, 
+dynamically generated manifest files, and packages your scripts
 into a convenient zip file for transport. The entire configuration of the 
 project is controlled by a single psproj.json file that guides the tool through
 your project allowing the build to remain flexible.
+
+*Notice: ScriptCop Integration is currently Disabled due to a slew of issues that were causing the analysis to be flaky.*
 
 **To Build:**
 

@@ -87,7 +87,7 @@ Function New-DistributionDirectory {
 		Remove-Item $ProjectData.DistributionPath -Force -Recurse
 	}
 	# Create the distribution directory
-	New-Item $ProjectData.DistributionPath -ItemType Directory | Out-Null
+	New-Item $ProjectData.DistributionPath -ItemType Directory | Write-Debug
 }
 
 Function New-ModuleManifestFromProjectData {
@@ -203,7 +203,7 @@ Function Export-Artifacts {
 	)
     $temp = "$($ProjectData.ProjectRoot)\temp"
     if ((Test-Path $temp) -eq $False) {
-		New-Item -Type Directory $temp
+		New-Item -Type Directory $temp | Write-Debug
 	}
 	# Requires .NET 4.5
 	[Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem") | Out-Null
@@ -268,11 +268,11 @@ Function Copy-Artifacts {
 	)
     $temp = "$($ProjectData.ProjectRoot)\temp"
 	if ((Test-Path $temp) -eq $False) {
-		New-Item -Type Directory $temp
+		New-Item -Type Directory $temp | Write-Debug
 	}
     $modPath = "$temp\$($ProjectData.RootModule)"
     if ((Test-Path $modPath) -eq $False) {
-		New-Item -Type Directory $modPath
+		New-Item -Type Directory $modPath | Write-Debug
 	}
 
 	Copy-Item `
@@ -314,17 +314,14 @@ Function Invoke-PSBuild {
 	New-DistributionDirectory -ProjectData $projData
 	Write-Verbose "Creating Manifest File..."
 	New-ModuleManifestFromProjectData -ProjectData $projData
-	Write-Verbose "Copying Artifacts to dist folder..."
+	Write-Verbose "Copying Artifacts to temp folder..."
 	Copy-Artifacts -ProjectData $projData
-	Write-Verbose "Invoking Static Analysis..."
+#	Write-Verbose "Invoking Static Analysis..."
 	# Add the temp directory to the module path temporarily for the script cop
-	$env:PSModulePath = "$($env:PSModulePath);$(Resolve-Path "$ProjectRoot\temp")"
-	Invoke-ScriptCop -ModuleName $projData.RootModule
+#	$env:PSModulePath = "$($env:PSModulePath);$(Resolve-Path "$ProjectRoot\temp")"
+#	Invoke-ScriptCop -ModuleName $projData.RootModule
 	Write-Verbose "Zipping Up Artifacts..."
 	Export-Artifacts -ProjectData $projData
-
-	# Cleanup
-	#Remove-item -Exclude *.zip $($projData.ProjectRoot)/tmp
 }
 #endregion
 

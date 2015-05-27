@@ -39,6 +39,7 @@ Function Get-PSProjectProperties {
 		$companyName = $projData.companyName
 		$uniqueId = $projData.uniqueId
 		$rootModule = $projData.rootModule
+		$dependencies = $projData.dependencies
 		$moduleNames = Get-ChildItem $ProjectRoot `
 			-Recurse -Filter *.psm1 | ForEach BaseName
 		@{
@@ -55,7 +56,8 @@ Function Get-PSProjectProperties {
 			"ProjectName" = $projectName;
 			"ProjectRoot" = $ProjectRoot;
 			"ModuleNames" = $moduleNames;
-			"RootModule" = $rootModule
+			"RootModule" = $rootModule;
+			"Dependencies" = $dependencies
 		}
 	}
 }
@@ -123,6 +125,8 @@ Function New-ModuleManifestFromProjectData {
 	$psVersion = if ($ProjectData.PowerShellVersion -ne $null) { $ProjectData.PowerShellVersion } else { "4.0" }
 	$dnVersion = if ($ProjectData.DotNetVersion -ne $null) { $ProjectData.DotNetVersion } else { "4.5" }
 	$companyName = if ($ProjectData.CompanyName -ne $null) { $ProjectData.CompanyName } else { "" }
+	$dependencies = if ($ProjectData.Dependencies -ne $null) { $ProjectData.Dependencies } else { @() }
+	$fileList = Get-ChildItem -Recurse $ProjectData.SourcePath | Select -ExpandProperty Name
 
 
 	# Get rid of old manifest if it's there
@@ -137,10 +141,11 @@ Function New-ModuleManifestFromProjectData {
 		-RootModule "$ModuleName.psm1" `
 		-Guid $uniqueId `
 		-Author $authors `
-		-FileList @() `
+		-FileList $fileList `
 		-CompanyName $companyName `
 		-Copyright "(c) $((Get-Date).Year) $companyName All rights reserved.' " `
 		-Description $description  `
+		-RequiredModules $dependencies `
 		-PowerShellVersion $psVersion `
 		-DotNetFrameworkVersion $dnVersion `
 		-NestedModules (Get-ChildItem  $searchPath -Filter *.psm1 -Exclude "$ModuleName.psm1" | ForEach Name )

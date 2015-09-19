@@ -12,13 +12,11 @@ your project allowing the build to remain flexible.
 
 **To Build:**
 
-Building the project is not required to use it. You can just download the 
-zip file for the version you would like from the location listed below if 
-you don't want to build the artifacts yourself.
+Building this project is not required to use it. You can just download the
+zip file for the version you would like from the dist directory of the release of your choice 
+on the releases tab in github.
 
-[Download Latest Stable Release (v0.2.2)](https://github.com/unsignedbytes/UBBuildTools/raw/master/dist/UnsignedBytes.BuildTools-0.2.2.zip)
-
-Prerequisites: ScriptCop (http://scriptcop.start-automating.com/)
+Prerequisites: ScriptCop (http://scriptcop.start-automating.com/) (NOTE: Currently disabled)
 
 ```PowerShell
 git clone https://github.com/unsignedbytes/UBBuildTools/

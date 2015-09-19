@@ -8,13 +8,18 @@ LONG DESCRIPTION
 	This set of utility functions allow you to build a 
 	nice zipfile of your modules, manifests and help files.
 	It will also allow you to run your Module Tests and ScriptCop.
+	Optionally you can also install the last build of the module
+	to your module folder.
 
 EXAMPLES
 	Invoke-PSBuild -ProjectRoot "./project/path/" -ModuleName MyModule
 	Build a PowerShell Project
 
+	Invoke-PSInstall -ProjectRoot "./project/path/"
+	Install the module at the specefied project root into the default module folder
+
 KEYWORDS
-	Build, Release, Tools, Utils, ScriptCop, Tests, Zip, Artifacts
+	Build, Release, Tools, Utils, ScriptCop, Tests, Zip, Artifacts, Install, Archive, Unzip, Unarchive
 
 SEE ALSO
 	N/A

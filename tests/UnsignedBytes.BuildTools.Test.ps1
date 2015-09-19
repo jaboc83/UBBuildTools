@@ -4,6 +4,7 @@ $projRoot = "$scriptPath/../_TestProjectRoot"
 $src = "$scriptPath/../src"
 $dist = "$projRoot/dist"
 $modName = "MyModule"
+$modules = "$dist/TempModules"
 $modVersion = "1.2.3"
 $buildTools = "UnsignedBytes.BuildTools"
 $uid = "525222de-a3d1-48ef-8055-510e4c681be4"
@@ -72,7 +73,9 @@ Function Test-GetPSProjectProperties {
 # New-DistributionDirectory
 Function Test-NewDistributionDirectory {
 	## ARRANGE
-	Remove-Item $dist -Recurse -Force
+	if(Test-Path $dist) {
+		Remove-Item $dist -Recurse -Force
+	}
 
 	## ACT
 	New-DistributionDirectory -ProjectData (Get-PSProjectProperties $projRoot)
@@ -130,7 +133,7 @@ Function Test-ExportArtifacts {
 	}
 
 	## ACT
-	Export-Artifacts -ProjectData (Get-PSProjectProperties $projRoot) 
+	Export-Artifacts -ProjectData (Get-PSProjectProperties $projRoot)
 
 	## ASSERT
 	if (Test-Path "$dist/$modName-$modVersion.zip") {
@@ -142,6 +145,29 @@ Function Test-ExportArtifacts {
 	if (Test-Path "$dist/*") {
 		Remove-Item "$dist/*"
 	}
+}
+
+# Export-ArchiveContents
+Function Test-ExportArchiveContents {
+	## ARRANGE
+	Invoke-PSBuild -ProjectRoot $projRoot
+	if (-not (Test-Path "$dist/$modName-$modVersion.zip")) {
+		Write-Error "Artifacts Not Built. Ending Test."
+	}
+
+	## ACT
+	Export-ArchiveContents -ArchiveFile "$dist/$modName-$modVersion.zip" -DestinationDirectory "$dist/Unzipped"
+
+	## ASSERT
+	if (-not (Test-Path "$dist/Unzipped/$modName/$modName.psm1") -or
+		-not (Test-Path "$dist/Unzipped/$modName/$modName.psd1")) {
+		Write-Error "Failed to unarchive files to destination"
+	} else {
+		Write-Output "Archive Contents Exported Successfully."
+	}
+
+	# cleanup
+	Remove-Item -Recurse -Force "$dist/Unzipped"
 }
 
 # Invoke-Tests
@@ -157,26 +183,48 @@ Function Test-InvokeTests {
 	Write-Output "Tests Completed."
 }
 
-# Invoke-Build
-Function Test-InvokeBuild {
+# Invoke-PSBuild
+Function Test-InvokePSBuild {
 	## ARRANGE
 	Import-Module "$src/$buildTools.psm1"
 
 	## ACT
-	Invoke-PSBuild -ProjectRoot $projRoot 
+	Invoke-PSBuild -ProjectRoot $projRoot
 
 	## ASSERT
 	Write-Output "Build Completed."
 }
 
+# Invoke-PSBuild
+Function Test-InvokePSInstall {
+	## ARRANGE
+	if (Test-Path "$modules") {
+		Remove-Item "$modules" -Recurse -Force
+	}
+	Invoke-PSBuild -ProjectRoot $projRoot
+
+	## ACT
+	Invoke-PSInstall -ProjectRoot $projRoot -ModulesDirectory $modules
+
+	## ASSERT
+	Write-Output "Install Complete."
+
+	# cleanup
+	if (Test-Path "$modules") {
+		Remove-Item "$modules" -Recurse -Force
+	}
+}
+
 Import-Module "$src/$buildTools.psm1"
 # Run Tests
-Test-GetPSProjectProperties
 Test-NewDistributionDirectory
+Test-GetPSProjectProperties
 Test-NewModuleManifestFromProjectData
-Test-InvokeScriptCop
+#Test-InvokeScriptCop
 Test-ExportArtifacts
+Test-ExportArchiveContents
 Test-InvokeTests
-Test-InvokeBuild
+Test-InvokePSBuild
+Test-InvokePSInstall
 
 Remove-Module $buildTools

@@ -227,6 +227,48 @@ Function Export-Artifacts {
 
 }
 
+Function Export-ArchiveContents {
+	<#
+	.SYNOPSIS
+		Export the contents of a zip file to the destination folder
+	.DESCRIPTION
+		This function will unzip the contents of the zip file into the destination
+		directory. It will create the destination if it doesn't exist.
+	.PARAMETER ArchiveFile
+		A zip file
+	.PARAMETER DestinationDirectory
+		Filepath to unzip the contents into
+	.PARAMETER Replace
+		Overwrite existing destination folder
+	.EXAMPLE
+		Export-ArchiveContents -ArchiveFile $zipFile -DestinationDirectory /temp/zipcontents
+		Export the contents of the archive to the specified directory
+	.EXAMPLE
+		Export-ArchiveContents -ArchiveFile $zipFile -DestinationDirectory /temp/zipcontents -Force
+		Export the contents of the archive to the specified directory destroying anything that was already
+		the destination
+	#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory=$True)]
+		[string] $ArchiveFile,
+
+		[Parameter(Mandatory=$True)]
+        [string] $DestinationDirectory,
+
+        [switch] $Replace
+	)
+    if ((Test-Path $DestinationDirectory) -eq $False) {
+		New-Item -Type Directory $DestinationDirectory | Write-Debug
+	} elseif ($Replace) {
+		Remove-Item $DestinationDirectory -Force -Recurse
+	}
+
+	# Requires .NET 4.5
+	#[Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem") | Out-Null
+	[System.IO.Compression.ZipFile]::ExtractToDirectory($ArchiveFile, $DestinationDirectory)
+}
+
 Function Invoke-Tests {
 	<#
 	.SYNOPSIS
@@ -308,6 +350,8 @@ Function Invoke-PSBuild {
 
 	Write-Verbose "Getting Project Data..."
 	$projData = Get-PSProjectProperties -ProjectRoot $ProjectRoot
+	Write-Verbose "Creating Output Directory..."
+	New-DistributionDirectory -ProjectData $projData
 	Write-Verbose "Invoking Project Tests..."
 	Invoke-Tests -ProjectData $projData
 	$modulePath = Get-ChildItem -Recurse -Filter "$($projData.RootModule).psm1" $projData.ProjectRoot |
@@ -315,8 +359,6 @@ Function Invoke-PSBuild {
     if((Get-Module $projData.RootModule) -eq $null) {
         Import-Module $modulePath
     }
-	Write-Verbose "Creating Output Directory..."
-	New-DistributionDirectory -ProjectData $projData
 	Write-Verbose "Creating Manifest File..."
 	New-ModuleManifestFromProjectData -ProjectData $projData
 	Write-Verbose "Copying Artifacts to temp folder..."
@@ -328,23 +370,65 @@ Function Invoke-PSBuild {
 	Write-Verbose "Zipping Up Artifacts..."
 	Export-Artifacts -ProjectData $projData
 }
+
+Function Invoke-PSInstall {
+	<#
+	.SYNOPSIS
+		Install module output of a PowerShell Project
+	.DESCRIPTION
+		This function will take the artifacts of the last project
+		build and install them in the user's manifest directory.
+	.PARAMETER $ProjectRoot
+		The path to the root of the PowerShell project where the psproj.json lives
+	.PARAMETER $ModulesDirectory
+		The path to where powershell modules should be installed
+	.EXAMPLE
+		Invoke-PSInstall -ProjectRoot ./MyProject/
+		Install MyModule.psm1
+	.EXAMPLE
+		Invoke-PSInstall -ProjectRoot ./MyProject/ -ModulesDirectory E:/PSModules
+		Install MyModule.psm1 to the custom module path E:/PSModules
+	#>
+	[CmdletBinding()]
+	param (
+		[string] $ProjectRoot = "./",
+		[string] $ModulesDirectory = "~/Documents/WindowsPowerShell/Modules"
+	)
+
+	$projData = Get-PSProjectProperties -ProjectRoot $ProjectRoot
+	$dist = $projData.DistributionPath
+
+	# Make sure we have something to deploy
+	if((Get-ChildItem "$dist\*.zip").Count -eq 0) {
+		Write-Error "No module found; did you build the module yet?"
+		Return
+	}
+	# Resolve the path even if it doesn't exist yet. (unlike Convert-Path)
+	$modules = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ModulesDirectory)
+	Export-ArchiveContents -ArchiveFile (Get-ChildItem "$dist\$($projData.ModuleName)*.zip")[0] -DestinationDirectory "$modules" -Replace
+	Write-Output "Module Installed to $modules"
+}
 #endregion
 
 #region Aliases
 Set-Alias psbuild Invoke-PSBuild
+Set-Alias psinstall Invoke-PSInstall
 #endregion
 
 #region Export Public Functions for the Module
 Export-ModuleMember -Function Get-PSProjectProperties
 Export-ModuleMember -Function Copy-Artifacts
 Export-ModuleMember -Function Export-Artifacts
+Export-ModuleMember -Function Export-ArchiveContents
 Export-ModuleMember -Function New-DistributionDirectory
 Export-ModuleMember -Function New-ModuleManifestFromProjectData
 Export-ModuleMember -Function Invoke-ScriptCop
 Export-ModuleMember -Function Invoke-Tests
 Export-ModuleMember -Function Invoke-PSBuild
+Export-ModuleMember -Function Invoke-PSInstall
 #endregion
 
 #region Export Aliases
 Export-ModuleMember -Alias psbuild
+Export-ModuleMember -Alias psinstall
 #endregion

@@ -78,7 +78,9 @@ Function Test-NewDistributionDirectory {
 	}
 
 	## ACT
+	New-DistributionDirectory -ProjectData (Get-PSProjectProperties $projRoot) -WhatIf
 	New-DistributionDirectory -ProjectData (Get-PSProjectProperties $projRoot)
+	New-DistributionDirectory -ProjectData (Get-PSProjectProperties $projRoot) -WhatIf
 
 	## ASSERT
 	if((Test-Path $dist) -eq $False) {
@@ -98,7 +100,9 @@ Function Test-NewModuleManifestFromProjectData {
 	}
 
 	## ACT
+	New-ModuleManifestFromProjectData -ProjectData (Get-PSProjectProperties -ProjectRoot $projRoot) -WhatIf
 	New-ModuleManifestFromProjectData -ProjectData (Get-PSProjectProperties -ProjectRoot $projRoot)
+	New-ModuleManifestFromProjectData -ProjectData (Get-PSProjectProperties -ProjectRoot $projRoot) -WhatIf
 
 	## ASSERT
 	if((Test-Path $manifestFile) -eq $False) {
@@ -133,7 +137,9 @@ Function Test-ExportArtifacts {
 	}
 
 	## ACT
+	Export-Artifacts -ProjectData (Get-PSProjectProperties $projRoot) -WhatIf
 	Export-Artifacts -ProjectData (Get-PSProjectProperties $projRoot)
+	Export-Artifacts -ProjectData (Get-PSProjectProperties $projRoot) -WhatIf
 
 	## ASSERT
 	if (Test-Path "$dist/$modName-$modVersion.zip") {
@@ -156,7 +162,9 @@ Function Test-ExportArchiveContents {
 	}
 
 	## ACT
+	Export-ArchiveContents -ArchiveFile "$dist/$modName-$modVersion.zip" -DestinationDirectory "$dist/Unzipped" -WhatIf
 	Export-ArchiveContents -ArchiveFile "$dist/$modName-$modVersion.zip" -DestinationDirectory "$dist/Unzipped"
+	Export-ArchiveContents -ArchiveFile "$dist/$modName-$modVersion.zip" -DestinationDirectory "$dist/Unzipped" -WhatIf
 
 	## ASSERT
 	if (-not (Test-Path "$dist/Unzipped/$modName/$modName.psm1") -or
@@ -177,7 +185,9 @@ Function Test-InvokeTests {
 
 	## ACT
 	Write-Output "Running Tests..."
+	Invoke-Tests -ProjectData (Get-PSProjectProperties $projRoot) -WhatIf
 	Invoke-Tests -ProjectData (Get-PSProjectProperties $projRoot)
+	Invoke-Tests -ProjectData (Get-PSProjectProperties $projRoot) -WhatIf
 
 	## ASSERT
 	Write-Output "Tests Completed."
@@ -189,7 +199,9 @@ Function Test-InvokePSBuild {
 	Import-Module "$src/$buildTools.psm1"
 
 	## ACT
+	Invoke-PSBuild -ProjectRoot $projRoot -WhatIf
 	Invoke-PSBuild -ProjectRoot $projRoot
+	Invoke-PSBuild -ProjectRoot $projRoot -WhatIf
 
 	## ASSERT
 	Write-Output "Build Completed."
@@ -204,7 +216,9 @@ Function Test-InvokePSInstall {
 	Invoke-PSBuild -ProjectRoot $projRoot
 
 	## ACT
+	Invoke-PSInstall -ProjectRoot $projRoot -ModulesDirectory $modules -WhatIf
 	Invoke-PSInstall -ProjectRoot $projRoot -ModulesDirectory $modules
+	Invoke-PSInstall -ProjectRoot $projRoot -ModulesDirectory $modules -WhatIf
 
 	## ASSERT
 	Write-Output "Install Complete."

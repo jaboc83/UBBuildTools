@@ -79,17 +79,19 @@ Function New-DistributionDirectory {
 		New-DistributionDirectory C:\projects\PowerShellProjectTestA\
 		Rebuild the distribution directory for the project at the path specified
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData
 	)
 	if (Test-Path $ProjectData.DistributionPath) {
 		# Blow away the distribution directory if it's already there
-		Remove-Item $ProjectData.DistributionPath -Force -Recurse
+		Remove-Item $ProjectData.DistributionPath -Force -Recurse -WhatIf:([bool]$WhatIfPreference.IsPresent)
 	}
 	# Create the distribution directory
-	New-Item $ProjectData.DistributionPath -ItemType Directory | Write-Debug
+	if ($pscmdlet.ShouldProcess($ProjectData.DistributionPath, "Creating Directory")) {
+		New-Item $ProjectData.DistributionPath -ItemType Directory | Write-Debug
+	}
 }
 
 Function New-ModuleManifestFromProjectData {
@@ -108,7 +110,7 @@ Function New-ModuleManifestFromProjectData {
 		New-ModuleManifestFromProjectData -ProjectData
 		Create a manifest for the file MyModule.psm1
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData
@@ -131,7 +133,7 @@ Function New-ModuleManifestFromProjectData {
 
 	# Get rid of old manifest if it's there
 	if (Test-Path(Join-Path $modulePath "$ModuleName.psd1")) {
-		Remove-Item (Join-Path $modulePath "$ModuleName.psd1")
+		Remove-Item (Join-Path $modulePath "$ModuleName.psd1") -WhatIf:([bool]$WhatIfPreference.IsPresent)
 	}
 
 	# Create the manifest
@@ -148,7 +150,8 @@ Function New-ModuleManifestFromProjectData {
 		-RequiredModules $dependencies `
 		-PowerShellVersion $psVersion `
 		-DotNetFrameworkVersion $dnVersion `
-		-NestedModules (Get-ChildItem  $searchPath -Filter *.psm1 -Exclude "$ModuleName.psm1" | ForEach Name )
+		-NestedModules (Get-ChildItem  $searchPath -Filter *.psm1 -Exclude "$ModuleName.psm1" | ForEach Name ) `
+		-WhatIf:([bool]$WhatIfPreference.IsPresent)
 }
 
 Function Invoke-ScriptCop {
@@ -199,7 +202,7 @@ Function Export-Artifacts {
 		Export-Artifacts -ProjectData $projData
 		Export the artifacts for the project
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData,
@@ -208,7 +211,7 @@ Function Export-Artifacts {
 	)
     $temp = "$($ProjectData.ProjectRoot)\temp"
     if ((Test-Path $temp) -eq $False) {
-		New-Item -Type Directory $temp | Write-Debug
+		New-Item -Type Directory $temp -WhatIf:([bool]$WhatIfPreference.IsPresent) | Write-Debug
 	}
 	# Requires .NET 4.5
 	[Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem") | Out-Null
@@ -216,15 +219,16 @@ Function Export-Artifacts {
 
 	# Overwrite the ZIP if it already already exists.
 	if (Test-Path $zipFileName) {
-		Remove-Item $zipFileName -Force
+		Remove-Item $zipFileName -Force -WhatIf:([bool]$WhatIfPreference.IsPresent)
 	}
 	$compressionLevel = [System.IO.Compression.CompressionLevel]::Optimal
 	$includeBaseDirectory = $false
-	[System.IO.Compression.ZipFile]::CreateFromDirectory((Convert-Path $temp), $zipFileName, $compressionLevel, $includeBaseDirectory)
-	if (Test-Path $temp) {
-		Remove-Item $temp -Force -Recurse
+	if ($pscmdlet.ShouldProcess($zipFileName, "Create archive file from path $temp")) {
+		[System.IO.Compression.ZipFile]::CreateFromDirectory((Convert-Path $temp), $zipFileName, $compressionLevel, $includeBaseDirectory)
 	}
-
+	if (Test-Path $temp) {
+		Remove-Item $temp -Force -Recurse -WhatIf:([bool]$WhatIfPreference.IsPresent)
+	}
 }
 
 Function Export-ArchiveContents {
@@ -248,7 +252,7 @@ Function Export-ArchiveContents {
 		Export the contents of the archive to the specified directory destroying anything that was already
 		the destination
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
 	param (
 		[Parameter(Mandatory=$True)]
 		[string] $ArchiveFile,
@@ -259,14 +263,15 @@ Function Export-ArchiveContents {
         [switch] $Replace
 	)
     if ((Test-Path $DestinationDirectory) -eq $False) {
-		New-Item -Type Directory $DestinationDirectory | Write-Debug
+		New-Item -Type Directory $DestinationDirectory -WhatIf:([bool]$WhatIfPreference.IsPresent) | Write-Debug
 	} elseif ($Replace) {
-		Remove-Item $DestinationDirectory -Force -Recurse
+		Remove-Item $DestinationDirectory -Force -Recurse -WhatIf:([bool]$WhatIfPreference.IsPresent)
 	}
 
 	# Requires .NET 4.5
-	#[Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem") | Out-Null
-	[System.IO.Compression.ZipFile]::ExtractToDirectory($ArchiveFile, $DestinationDirectory)
+	if ($pscmdlet.ShouldProcess($ArchiveFile, "Contents extracted to $DestinationDirectory")) {
+		[System.IO.Compression.ZipFile]::ExtractToDirectory($ArchiveFile, $DestinationDirectory)
+	}
 }
 
 Function Invoke-Tests {
@@ -283,22 +288,24 @@ Function Invoke-Tests {
 		Invoke-Tests -ProjectData $projData
 		Run all the tests for the project
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData
 	)
-    Get-ChildItem $ProjectData.SourcePath *.psm1 -Recurse | ForEach {
-        Import-Module $_.FullName
-    }
-	Get-ChildItem $ProjectData.TestsPath *.Test.ps1 | ForEach {
-		Invoke-Expression $_.FullName
-	}
-    Get-ChildItem $ProjectData.SourcePath *.psm1 -Recurse | ForEach {
-        $mname = [System.IO.Path]::GetFileNameWithoutExtension($_.FullName)
-        if(Get-Module $mname) {
-            Remove-Module $mname
-        }
+    if ($pscmdlet.ShouldProcess('Running Tests')) {
+		Get-ChildItem $ProjectData.SourcePath *.psm1 -Recurse | ForEach {
+			Import-Module $_.FullName
+		}
+	    Get-ChildItem $ProjectData.TestsPath *.Test.ps1 | ForEach {
+		    Invoke-Expression $_.FullName
+	    }
+		Get-ChildItem $ProjectData.SourcePath *.psm1 -Recurse | ForEach {
+			$mname = [System.IO.Path]::GetFileNameWithoutExtension($_.FullName)
+			if(Get-Module $mname) {
+				Remove-Module $mname -WhatIf:([bool]$WhatIfPreference.IsPresent)
+			}
+		}
     }
 }
 
@@ -308,25 +315,26 @@ Function Copy-Artifacts {
 		Copy the project artifacts to the specified directory
 	.DESCRIPTION
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData
 	)
     $temp = "$($ProjectData.ProjectRoot)\temp"
 	if ((Test-Path $temp) -eq $False) {
-		New-Item -Type Directory $temp | Write-Debug
+		New-Item -Type Directory $temp -WhatIf:([bool]$WhatIfPreference.IsPresent) | Write-Debug
 	}
     $modPath = "$temp\$($ProjectData.RootModule)"
     if ((Test-Path $modPath) -eq $False) {
-		New-Item -Type Directory $modPath | Write-Debug
+		New-Item -Type Directory $modPath -WhatIf:([bool]$WhatIfPreference.IsPresent) | Write-Debug
 	}
 
 	Copy-Item `
 		-Include *.psm1,*psd1,*ps1,*.help.txt `
 		-Path "$($ProjectData.SourcePath)\*" `
 		-Destination "$temp\$($ProjectData.RootModule)" `
-		-Recurse
+		-Recurse `
+		-WhatIf:([bool]$WhatIfPreference.IsPresent)
 }
 
 Function Invoke-PSBuild {
@@ -343,7 +351,7 @@ Function Invoke-PSBuild {
 		Invoke-PSBuild -ProjectRoot ./MyProject/
 		Run a full build on MyModule.psm1
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
 	param (
 		[string] $ProjectRoot = "./"
 	)
@@ -351,7 +359,7 @@ Function Invoke-PSBuild {
 	Write-Verbose "Getting Project Data..."
 	$projData = Get-PSProjectProperties -ProjectRoot $ProjectRoot
 	Write-Verbose "Creating Output Directory..."
-	New-DistributionDirectory -ProjectData $projData
+	New-DistributionDirectory -ProjectData $projData  -WhatIf:([bool]$WhatIfPreference.IsPresent)
 	Write-Verbose "Invoking Project Tests..."
 	Invoke-Tests -ProjectData $projData
 	$modulePath = Get-ChildItem -Recurse -Filter "$($projData.RootModule).psm1" $projData.ProjectRoot |
@@ -360,15 +368,15 @@ Function Invoke-PSBuild {
         Import-Module $modulePath
     }
 	Write-Verbose "Creating Manifest File..."
-	New-ModuleManifestFromProjectData -ProjectData $projData
+	New-ModuleManifestFromProjectData -ProjectData $projData -WhatIf:([bool]$WhatIfPreference.IsPresent)
 	Write-Verbose "Copying Artifacts to temp folder..."
-	Copy-Artifacts -ProjectData $projData
+	Copy-Artifacts -ProjectData $projData -WhatIf:([bool]$WhatIfPreference.IsPresent)
 #	Write-Verbose "Invoking Static Analysis..."
 	# Add the temp directory to the module path temporarily for the script cop
 #	$env:PSModulePath = "$($env:PSModulePath);$(Resolve-Path "$ProjectRoot\temp")"
 #	Invoke-ScriptCop -ModuleName $projData.RootModule
 	Write-Verbose "Zipping Up Artifacts..."
-	Export-Artifacts -ProjectData $projData
+	Export-Artifacts -ProjectData $projData -WhatIf:([bool]$WhatIfPreference.IsPresent)
 }
 
 Function Invoke-PSInstall {
@@ -389,7 +397,7 @@ Function Invoke-PSInstall {
 		Invoke-PSInstall -ProjectRoot ./MyProject/ -ModulesDirectory E:/PSModules
 		Install MyModule.psm1 to the custom module path E:/PSModules
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
 	param (
 		[string] $ProjectRoot = "./",
 		[string] $ModulesDirectory = "~/Documents/WindowsPowerShell/Modules"
@@ -405,7 +413,12 @@ Function Invoke-PSInstall {
 	}
 	# Resolve the path even if it doesn't exist yet. (unlike Convert-Path)
 	$modules = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ModulesDirectory)
-	Export-ArchiveContents -ArchiveFile (Get-ChildItem "$dist\$($projData.ModuleName)*.zip")[0] -DestinationDirectory "$modules" -Replace
+	Export-ArchiveContents `
+		-ArchiveFile (Get-ChildItem "$dist\$($projData.ModuleName)*.zip")[0] `
+		-DestinationDirectory "$modules" `
+		-Replace `
+		-WhatIf:([bool]$WhatIfPreference.IsPresent)
+
 	Write-Output "Module Installed to $modules"
 }
 #endregion

@@ -406,6 +406,9 @@ Function Invoke-PSInstall {
 	$projData = Get-PSProjectProperties -ProjectRoot $ProjectRoot
 	$dist = $projData.DistributionPath
 
+	# Requires .NET 4.5
+	[Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem") | Out-Null
+
 	# Make sure we have something to deploy
 	if((Get-ChildItem "$dist\*.zip").Count -eq 0) {
 		Write-Error "No module found; did you build the module yet?"
@@ -413,10 +416,14 @@ Function Invoke-PSInstall {
 	}
 	# Resolve the path even if it doesn't exist yet. (unlike Convert-Path)
 	$modules = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ModulesDirectory)
+	# Get rid of module if it exists already
+	If (Test-Path "$modules\$($projData.RootModule)") {
+		Remove-Item "$modules\$($projData.RootModule)" -Recurse -Force -WhatIf:([bool]$WhatIfPreference.IsPresent)
+	}
+	# Unzip
 	Export-ArchiveContents `
-		-ArchiveFile (Get-ChildItem "$dist\$($projData.ModuleName)*.zip")[0] `
+		-ArchiveFile (Get-ChildItem "$dist\$($projData.RootModule)*.zip")[0] `
 		-DestinationDirectory "$modules" `
-		-Replace `
 		-WhatIf:([bool]$WhatIfPreference.IsPresent)
 
 	Write-Output "Module Installed to $modules"

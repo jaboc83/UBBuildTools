@@ -22,6 +22,15 @@ Note that the folder inside Modules that contains the artifacts __MUST__ have th
 
 ### Create a project file and configure your module
 
+#### Initialize with the Wizard
+
+There is a built in project generator to flesh out the project structure that
+can be run by using the  `psinit` command. The command will run a wizard to 
+setup some of the parameters and generates the project.json, and the src,dist,
+and tests folders.
+
+#### Create Project Manually
+
 Create a new folder for your project, and create folders within it to store your module source, tests, and the distributable zipped artifacts.
 ```PowerShell
 mkdir MyProject
@@ -58,10 +67,6 @@ Bin directory should be used to hold your distributable artifacts after a build.
 * The uniqueId field is a unique identifier that will be used in the psd1 manifest file.
 * The rootModule must be the name of your main .psm1 module file
 
-There is a built in project generator to flesh out the project struction that
-can be run by using the  `psinit` command. The command will run a wizard to 
-setup some of the parameters and generates the project.json, and the src,dist,
-and tests folders.
 
 ### Add Your Module and about_* files
 

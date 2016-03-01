@@ -37,7 +37,7 @@ Create a new psproj.json file in the new project directory and add the following
 ```json
 {
 	"projectName": "My Fancy New Project",
-	"rootModule": "MyOrganization.MyFancyProject"
+	"rootModule": "MyOrganization.MyFancyProject",
 	"uniqueId": "9cb01216-d85b-49e7-a501-bb22d3a94046",
 	"companyName": "My Company, Inc.",
 	"version": "3.1.1",

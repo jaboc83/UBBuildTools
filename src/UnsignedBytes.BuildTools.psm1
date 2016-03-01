@@ -405,6 +405,8 @@ Function Invoke-PSInstall {
 
 	$projData = Get-PSProjectProperties -ProjectRoot $ProjectRoot
 	$dist = $projData.DistributionPath
+	Write-Host $projData.RootModule
+	$mName = $projData.RootModule
 
 	# Requires .NET 4.5
 	[Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem") | Out-Null
@@ -427,12 +429,114 @@ Function Invoke-PSInstall {
 		-WhatIf:([bool]$WhatIfPreference.IsPresent)
 
 	Write-Output "Module Installed to $modules"
+
+	#Unload module if already installed
+	if (((Get-Module -ListAvailable -Name $mName).Count -gt 0) `
+		-and ((Get-Module -Name $mName).Count -gt 0)) {
+		Remove-Module $mName
+	}
+}
+
+Function Invoke-PSInit {
+	<#
+	.SYNOPSIS
+		Create a new PowerShell Project
+	.DESCRIPTION
+		This function will create a new PowerShell project in the directory
+		specified.
+	.PARAMETER $ProjectFolder
+		The path to the root of the PowerShell project where the psproj.json
+		will live
+	.EXAMPLE
+		Invoke-PSInit -ProjectFolder ./newProj/
+		Initialize a new PS Project in the folder newProj
+	.EXAMPLE
+		Invoke-PSInit
+		Initialize a new PS Project in the current folder
+	#>
+	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	param (
+		[ValidateScript({ Test-Path "$_" })]
+		[Parameter(Mandatory=$False)]
+		[string] $ProjectFolder = "./"
+	)
+
+
+	if ($ProjectFolder -eq "./") {
+		(Resolve-Path "./").Path -match "\\([^\\\s]+)\\?$" | Out-Null
+	} else {
+		$ProjectFolder -match "\\([^\\\s]+)\\?$" | Out-Null
+	}
+	$projName = $Matches[1]
+
+	$temp = Read-Host "ProjectName ($projName):"
+	if ($temp -ne "") {
+		$projName = $temp
+	}
+
+	$uniqueId = [guid]::NewGuid()
+
+	$companyName = ""
+	$temp = Read-Host "Company Name:"
+	if ($temp -ne "") {
+		$companyName = $temp
+	}
+
+	$version = "1.0.0"
+	$temp = Read-Host "Version (1.0.0):"
+	if ($temp -ne "") {
+		$version = $temp
+	}
+
+	$description = ""
+	$temp = Read-Host "Description:"
+	if ($temp -ne "") {
+		$description = $temp
+	}
+
+	$src = "src"
+	$temp = Read-Host "Source Folder(src):"
+	if ($temp -ne "") {
+		$src = $temp
+	}
+
+	$dist = "dist"
+	$temp = Read-Host "Output Folder(dist):"
+	if ($temp -ne "") {
+		$dist = $temp
+	}
+
+	$tests = "tests"
+	$temp = Read-Host "Tests Folder(tests):"
+	if ($temp -ne "") {
+		$tests = $temp
+	}
+
+	@"
+	{
+		`"projectName`": `"$projName`",
+		`"uniqueId`": `"$uniqueId`",
+		`"companyName`": `"$companyName`",
+		`"version`": `"$version`",
+		`"description`": `"$description`",
+		`"authors`": [],
+		`"dotNetVersion`": `"4.6`",
+		`"powerShellVersion`": `"5.0`",
+		`"src`": `"$src`",
+		`"dist`": `"$dist`",
+		`"tests`": `"$tests`"
+	}
+"@ | Out-File -filepath "$ProjectFolder\psproj.json"
+	New-Item -ItemType directory -Path $src
+	New-Item -ItemType directory -Path $dist
+	New-Item -ItemType directory -Path $tests
 }
 #endregion
 
 #region Aliases
 Set-Alias psbuild Invoke-PSBuild
 Set-Alias psinstall Invoke-PSInstall
+Set-Alias psinit Invoke-PSInit
 #endregion
 
 #region Export Public Functions for the Module
@@ -446,9 +550,11 @@ Export-ModuleMember -Function Invoke-ScriptCop
 Export-ModuleMember -Function Invoke-Tests
 Export-ModuleMember -Function Invoke-PSBuild
 Export-ModuleMember -Function Invoke-PSInstall
+Export-ModuleMember -Function Invoke-PSInit
 #endregion
 
 #region Export Aliases
 Export-ModuleMember -Alias psbuild
 Export-ModuleMember -Alias psinstall
+Export-ModuleMember -Alias psinit
 #endregion

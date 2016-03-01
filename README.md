@@ -56,6 +56,11 @@ and can be overridden to point to any relative path e.g. `"dist": "Bin"` would i
 Bin directory should be used to hold your distributable artifacts after a build.
 * The uniqueId field is a unique identifier that will be used in the psd1 manifest file.
 
+There is a built in project generator to flesh out the project struction that
+can be run by using the  `psinit` command. The command will run a wizard to 
+setup some of the parameters and generates the project.json, and the src,dist,
+and tests folders.
+
 ### Add Your Module and about_* files
 
 Add your `.psm1` module file and `about_*` help files into the src directory.

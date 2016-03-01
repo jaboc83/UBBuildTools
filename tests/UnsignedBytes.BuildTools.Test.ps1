@@ -229,6 +229,7 @@ Function Test-InvokePSInstall {
 	}
 }
 
+
 Import-Module "$src/$buildTools.psm1"
 # Run Tests
 Test-NewDistributionDirectory
@@ -241,4 +242,6 @@ Test-InvokeTests
 Test-InvokePSBuild
 Test-InvokePSInstall
 
-Remove-Module $buildTools
+if ((Get-Module -Name $buildTools).Count -gt 0){
+	Remove-Module $buildTools
+}

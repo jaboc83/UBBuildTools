@@ -16,7 +16,10 @@ EXAMPLES
 	Build a PowerShell Project
 
 	Invoke-PSInstall -ProjectRoot "./project/path/"
-	Install the module at the specefied project root into the default module folder
+	Install the module at the specified project root into the default module folder
+
+	Invoke-PSInit 
+	Create a new PS Project in the current folder and run init wizard
 
 KEYWORDS
 	Build, Release, Tools, Utils, ScriptCop, Tests, Zip, Artifacts, Install, Archive, Unzip, Unarchive

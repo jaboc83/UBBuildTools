@@ -37,6 +37,7 @@ Create a new psproj.json file in the new project directory and add the following
 ```json
 {
 	"projectName": "My Fancy New Project",
+	"rootModule": "MyOrganization.MyFancyProject"
 	"uniqueId": "9cb01216-d85b-49e7-a501-bb22d3a94046",
 	"companyName": "My Company, Inc.",
 	"version": "3.1.1",
@@ -55,6 +56,7 @@ Create a new psproj.json file in the new project directory and add the following
 and can be overridden to point to any relative path e.g. `"dist": "Bin"` would indicate that the
 Bin directory should be used to hold your distributable artifacts after a build.
 * The uniqueId field is a unique identifier that will be used in the psd1 manifest file.
+* The rootModule must be the name of your main .psm1 module file
 
 There is a built in project generator to flesh out the project struction that
 can be run by using the  `psinit` command. The command will run a wizard to 

@@ -512,9 +512,12 @@ Function Invoke-PSInit {
 		$tests = $temp
 	}
 
+	$rootModule = $projName -replace " ",""
+
 	@"
 	{
 		`"projectName`": `"$projName`",
+		`"rootModule`": `"$rootModule`",
 		`"uniqueId`": `"$uniqueId`",
 		`"companyName`": `"$companyName`",
 		`"version`": `"$version`",
@@ -530,6 +533,7 @@ Function Invoke-PSInit {
 	New-Item -ItemType directory -Path $src
 	New-Item -ItemType directory -Path $dist
 	New-Item -ItemType directory -Path $tests
+	New-Item -ItemType file -Path "$src\$rootModule.psm1"
 }
 #endregion
 

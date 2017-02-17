@@ -154,39 +154,6 @@ Function New-ModuleManifestFromProjectData {
 		-WhatIf:([bool]$WhatIfPreference.IsPresent)
 }
 
-Function Invoke-ScriptCop {
-	<#
-	.SYNOPSIS
-		Run the Static script analysis tool ScriptCop on a loaded module
-	.DESCRIPTION
-		This function will run a simple analysis over the specified
-		module to determine if it follows the best practices outlined
-		by the ScriptCop analyzer.
-
-		NOTE: The module must be loaded in order to be analyzed
-	.PARAMETER ModuleName
-		The name of the Module you would like to analyze
-	.EXAMPLE
-		Invoke-ScriptCop MyModule
-		Analyze MyModule.psm1 which has been already been loaded.
-	#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory=$True)]
-		[string] $ModuleName
-	)
-	if (Get-Command Test-Command -errorAction SilentlyContinue)
-	{
-		Get-Module -Name $ModuleName | Test-Command | Where {
-			$_.Problem -notmatch "does not define any #regions" -and `
-			$_.Problem -notmatch "No command is an island\.  Please add at least one \.LINK"
-		}
-	}
-	else
-	{
-		Write-Error "ScriptCop is not installed; please go to http://scriptcop.start-automating.com/ to get it."
-	}
-}
 
 Function Export-Artifacts {
 	<#
@@ -389,7 +356,8 @@ Function Invoke-PSInstall {
 	.PARAMETER $ProjectRoot
 		The path to the root of the PowerShell project where the psproj.json lives
 	.PARAMETER $ModulesDirectory
-		The path to where powershell modules should be installed
+		The path to where powershell modules should be installed default is the
+		user's module path
 	.EXAMPLE
 		Invoke-PSInstall -ProjectRoot ./MyProject/
 		Install MyModule.psm1
@@ -535,6 +503,7 @@ Function Invoke-PSInit {
 	New-Item -ItemType directory -Path $tests
 	New-Item -ItemType file -Path "$src\$rootModule.psm1"
 }
+
 #endregion
 
 #region Aliases

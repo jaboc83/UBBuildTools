@@ -10,8 +10,6 @@ your project allowing the build to remain flexible.
 
 Using the build tools is as simple as running `psbuild` from the module project root. This will result in a nice little `.zip` package that includes your module, any `about_*` documentation as well as an auto-generated manifest file.
 
-*Notice: ScriptCop Integration is currently disabled due to a few issues that were causing the analysis to be flaky.*
-
 ### Install Module
 
 In order to use the Build Tools you must install them to the powershell modules directory. Grab the latest UnsignedBytes.BuildTools-x.x.x.zip file from the `dist` folder of the latest release tag and unzip the contents to:
@@ -24,9 +22,9 @@ Note that the folder inside Modules that contains the artifacts __MUST__ have th
 
 #### Initialize with the Wizard
 
-There is a built in project generator to flesh out the project structure that
+There is a built-in project generator to flesh out the project structure that
 can be run by using the  `psinit` command. The command will run a wizard to 
-setup some of the parameters and generates the project.json, and the src,dist,
+setup some of the parameters and generates the project.json, and the src, dist,
 and tests folders.
 
 #### Create Project Manually
@@ -81,19 +79,7 @@ Add any powershell tests with the format `*.Test.ps1` to the tests directory. Se
 Run the `psbuild` or Invoke-PSBuild command to build the zip package for your module. The `.zip` will 
 be found in the `dist` directory. See Get-Help Invoke-PSBuild for more details.
 
-### Contributers
-Contributions to the project are very welcome, so feel free to send me a pull request. This is a very new project and I have many ideas I'm tossing around for it and I would also like to hear some from anyone else who finds this useful.
-
-**Prerequisites:** ~~ScriptCop (http://scriptcop.start-automating.com/)~~ Currently Disabled
-
-**Setup**
-```PowerShell
-git clone https://github.com/unsignedbytes/UBBuildTools/
-cd ./UBBuildTools/
-ipmo ./src/UnsignedBytes.BuildTools.psm1 
-Invoke-PSBuild -ProjectRoot ./ -ModuleName UnsignedBytes.BuildTools
-```
-**Installing**
+### Installing
 
 If you would like to install the module to the default modules directory you can run...
 ```PowerShell
@@ -104,6 +90,21 @@ or
 Invoke-PSInstall
 ```
 ...from the project root. It will overwrite the module if it is already installed.
+optionally you may pass the location you want the module installed via the ModulesDirectory
+parameter.
+
+### Contributers
+Contributions to the project are very welcome, so feel free to send me a pull request. This is a very new project and I have many ideas I'm tossing around for it and I would also like to hear some from anyone else who finds this useful.
+
+**Dependencies:** None
+
+**Dev Setup**
+```PowerShell
+git clone https://github.com/unsignedbytes/UBBuildTools/
+cd ./UBBuildTools/
+ipmo ./src/UnsignedBytes.BuildTools.psm1 
+Invoke-PSBuild -ProjectRoot ./ -ModuleName UnsignedBytes.BuildTools
+```
 
 ### Misc
 

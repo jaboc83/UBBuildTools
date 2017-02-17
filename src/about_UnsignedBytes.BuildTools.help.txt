@@ -18,6 +18,10 @@ EXAMPLES
 	Invoke-PSInstall -ProjectRoot "./project/path/"
 	Install the module at the specified project root into the default module folder
 
+	Invoke-PSInstall -ModuleDirectory "C:\PowerShellModules\"
+	Install the module from the project in the current directory to the custom 
+	location C:\PowershellModules
+
 	Invoke-PSInit 
 	Create a new PS Project in the current folder and run init wizard
 

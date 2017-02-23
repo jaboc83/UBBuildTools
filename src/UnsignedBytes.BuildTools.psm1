@@ -65,21 +65,29 @@ Function Get-PSProjectProperties {
 Function Add-VersionCommentToScript {
 	<#
 	.SYNOPSIS
-		Add the module version to the top of the script
+		Add the module version to the top of the script and a checksum
 	.DESCRIPTION
-		This function will add the module version as a comment to the first line
-		of the specified script file
+		This function will add the module version and a content hash as a comment
+		to the first line of the specified script file. This way we can detect if
+		the content changes and the version doesn't.
 	.PARAMETER $ScriptPath
 		The path to the script file we want to add a version to
 	.PARAMETER $Version
 		The module version number
 	.EXAMPLE
 		Add-VersionCommentToScript -ScriptPath "myscript.psm1" -Version 1.2.4
-		Add the line #Version [1.2.4] to the top of the script myscript.psm1
+		Add the line #Version [1.2.4] and checksum hash to the top of the script
+		myscript.psm1
 	#>
 	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
-		[ValidateScript({ if ($pscmdlet.ShouldProcess($_, "Add-VersionCommentToScript")) {return (Test-Path "$_") } else { return $True } })]
+		[ValidateScript({
+			If ($pscmdlet.ShouldProcess($_, "Add-VersionCommentToScript")) {
+				return (Test-Path "$_")
+			} Else {
+				return $True
+			}
+		})]
 		[Parameter(
 			Mandatory=$True,
 			ValueFromPipeline=$True
@@ -89,9 +97,10 @@ Function Add-VersionCommentToScript {
 		[string] $Version
 	)
 	PROCESS {
-		$header = "#Version [$Version]"
-
-		if ($pscmdlet.ShouldProcess($ScriptPath, "Add version comment to script file")) {
+		If ($pscmdlet.ShouldProcess($ScriptPath, "Add version comment to script file")) {
+			$md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
+			$hash = [System.BitConverter]::ToString($md5.ComputeHash([System.IO.File]::ReadAllBytes((Resolve-Path $ScriptPath))))
+			$header = "#Version [$Version] Checksum [$hash]"
 			$header | Set-Content "$ScriptPath.tmp"
 			Get-Content $ScriptPath -ReadCount 5000 | Add-Content "$ScriptPath.tmp"
 			Remove-Item $ScriptPath

@@ -116,19 +116,6 @@ Function Test-NewModuleManifestFromProjectData {
 	}
 }
 
-# Invoke-ScriptCop
-Function Test-InvokeScriptCop {
-	## ARRANGE
-
-	## ACT
-	Invoke-ScriptCop "$projRoot/src/$modName.psm1"
-
-	## ASSERT
-	Write-Output "ScriptCop Ran Successfully"
-
-	# cleanup
-}
-
 # Export-Artifacts
 Function Test-ExportArtifacts {
 	## ARRANGE
@@ -235,7 +222,6 @@ Import-Module "$src/$buildTools.psm1"
 Test-NewDistributionDirectory
 Test-GetPSProjectProperties
 Test-NewModuleManifestFromProjectData
-#Test-InvokeScriptCop
 Test-ExportArtifacts
 Test-ExportArchiveContents
 Test-InvokeTests

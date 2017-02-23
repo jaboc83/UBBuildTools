@@ -62,6 +62,44 @@ Function Get-PSProjectProperties {
 	}
 }
 
+Function Add-VersionCommentToScript {
+	<#
+	.SYNOPSIS
+		Add the module version to the top of the script
+	.DESCRIPTION
+		This function will add the module version as a comment to the first line
+		of the specified script file
+	.PARAMETER $ScriptPath
+		The path to the script file we want to add a version to
+	.PARAMETER $Version
+		The module version number
+	.EXAMPLE
+		Add-VersionCommentToScript -ScriptPath "myscript.psm1" -Version 1.2.4
+		Add the line #Version [1.2.4] to the top of the script myscript.psm1
+	#>
+	[CmdletBinding(SupportsShouldProcess=$True)]
+	param (
+		[ValidateScript({ if ($pscmdlet.ShouldProcess($_, "Add-VersionCommentToScript")) {return (Test-Path "$_") } else { return $True } })]
+		[Parameter(
+			Mandatory=$True,
+			ValueFromPipeline=$True
+		)]
+		[string] $ScriptPath,
+		[Parameter(Mandatory=$True)]
+		[string] $Version
+	)
+	PROCESS {
+		$header = "#Version [$Version]"
+
+		if ($pscmdlet.ShouldProcess($ScriptPath, "Add version comment to script file")) {
+			$header | Set-Content "$ScriptPath.tmp"
+			Get-Content $ScriptPath -ReadCount 5000 | Add-Content "$ScriptPath.tmp"
+			Remove-Item $ScriptPath
+			Move-Item "$ScriptPath.tmp" $ScriptPath
+		}
+	}
+}
+
 Function New-DistributionDirectory {
 	<#
 	.SYNOPSIS
@@ -79,7 +117,7 @@ Function New-DistributionDirectory {
 		New-DistributionDirectory C:\projects\PowerShellProjectTestA\
 		Rebuild the distribution directory for the project at the path specified
 	#>
-	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData
@@ -110,7 +148,7 @@ Function New-ModuleManifestFromProjectData {
 		New-ModuleManifestFromProjectData -ProjectData
 		Create a manifest for the file MyModule.psm1
 	#>
-	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData
@@ -169,15 +207,16 @@ Function Export-Artifacts {
 		Export-Artifacts -ProjectData $projData
 		Export the artifacts for the project
 	#>
-	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData,
 
         [string] $ArtifactSource
 	)
-    $temp = "$($ProjectData.ProjectRoot)\temp"
-    if ((Test-Path $temp) -eq $False) {
+	# Create the Temp directory if it doesn't already exist
+	$temp = "$($ProjectData.ProjectRoot)\temp"
+	if ((Test-Path $temp) -eq $False) {
 		New-Item -Type Directory $temp -WhatIf:([bool]$WhatIfPreference.IsPresent) | Write-Debug
 	}
 	# Requires .NET 4.5
@@ -219,7 +258,7 @@ Function Export-ArchiveContents {
 		Export the contents of the archive to the specified directory destroying anything that was already
 		the destination
 	#>
-	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
 		[Parameter(Mandatory=$True)]
 		[string] $ArchiveFile,
@@ -255,7 +294,7 @@ Function Invoke-Tests {
 		Invoke-Tests -ProjectData $projData
 		Run all the tests for the project
 	#>
-	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData
@@ -282,17 +321,19 @@ Function Copy-Artifacts {
 		Copy the project artifacts to the specified directory
 	.DESCRIPTION
 	#>
-	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
 		[Parameter(Mandatory=$True)]
 		[hashtable] $ProjectData
 	)
-    $temp = "$($ProjectData.ProjectRoot)\temp"
+	# Create Temp directory if it doesn't already Exist
+	$temp = "$($ProjectData.ProjectRoot)\temp"
 	if ((Test-Path $temp) -eq $False) {
 		New-Item -Type Directory $temp -WhatIf:([bool]$WhatIfPreference.IsPresent) | Write-Debug
 	}
-    $modPath = "$temp\$($ProjectData.RootModule)"
-    if ((Test-Path $modPath) -eq $False) {
+	# Create Module directory if it doesn't already Exist
+	$modPath = "$temp\$($ProjectData.RootModule)"
+	if ((Test-Path $modPath) -eq $False) {
 		New-Item -Type Directory $modPath -WhatIf:([bool]$WhatIfPreference.IsPresent) | Write-Debug
 	}
 
@@ -318,7 +359,7 @@ Function Invoke-PSBuild {
 		Invoke-PSBuild -ProjectRoot ./MyProject/
 		Run a full build on MyModule.psm1
 	#>
-	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
 		[string] $ProjectRoot = "./"
 	)
@@ -338,10 +379,7 @@ Function Invoke-PSBuild {
 	New-ModuleManifestFromProjectData -ProjectData $projData -WhatIf:([bool]$WhatIfPreference.IsPresent)
 	Write-Verbose "Copying Artifacts to temp folder..."
 	Copy-Artifacts -ProjectData $projData -WhatIf:([bool]$WhatIfPreference.IsPresent)
-#	Write-Verbose "Invoking Static Analysis..."
-	# Add the temp directory to the module path temporarily for the script cop
-#	$env:PSModulePath = "$($env:PSModulePath);$(Resolve-Path "$ProjectRoot\temp")"
-#	Invoke-ScriptCop -ModuleName $projData.RootModule
+	Add-VersionCommentToScript -ScriptPath "$($projData.ProjectRoot)/temp/$($projData.RootModule)/$($projData.RootModule).psm1" -Version $projData.ModuleVersion
 	Write-Verbose "Zipping Up Artifacts..."
 	Export-Artifacts -ProjectData $projData -WhatIf:([bool]$WhatIfPreference.IsPresent)
 }
@@ -365,7 +403,7 @@ Function Invoke-PSInstall {
 		Invoke-PSInstall -ProjectRoot ./MyProject/ -ModulesDirectory E:/PSModules
 		Install MyModule.psm1 to the custom module path E:/PSModules
 	#>
-	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
 		[string] $ProjectRoot = "./",
 		[string] $ModulesDirectory = "~/Documents/WindowsPowerShell/Modules"
@@ -422,7 +460,7 @@ Function Invoke-PSInit {
 		Invoke-PSInit
 		Initialize a new PS Project in the current folder
 	#>
-	[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact='Medium')]
+	[CmdletBinding(SupportsShouldProcess=$True)]
 	param (
 		[ValidateScript({ Test-Path "$_" })]
 		[Parameter(Mandatory=$False)]
@@ -513,6 +551,7 @@ Set-Alias psinit Invoke-PSInit
 #endregion
 
 #region Export Public Functions for the Module
+Export-ModuleMember -Function Add-VersionCommentToScript
 Export-ModuleMember -Function Get-PSProjectProperties
 Export-ModuleMember -Function Copy-Artifacts
 Export-ModuleMember -Function Export-Artifacts

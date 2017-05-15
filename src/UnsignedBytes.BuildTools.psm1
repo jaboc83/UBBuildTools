@@ -1,4 +1,4 @@
-#region Functions
+﻿#region Functions
 Function Get-PSProjectProperties {
 	<#
 	.SYNOPSIS
@@ -98,11 +98,12 @@ Function Add-VersionCommentToScript {
 	)
 	PROCESS {
 		If ($pscmdlet.ShouldProcess($ScriptPath, "Add version comment to script file")) {
+			(Get-Content $ScriptPath) | Set-Content -Path $ScriptPath -Encoding UTF8
 			$md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
 			$hash = [System.BitConverter]::ToString($md5.ComputeHash([System.IO.File]::ReadAllBytes((Resolve-Path $ScriptPath))))
 			$header = "#Version [$Version] Checksum [$hash]"
-			$header | Set-Content "$ScriptPath.tmp"
-			Get-Content $ScriptPath -ReadCount 5000 | Add-Content "$ScriptPath.tmp"
+			$header | Set-Content "$ScriptPath.tmp" -Encoding UTF8
+			Get-Content $ScriptPath -ReadCount 5000 -Encoding UTF8 | Add-Content "$ScriptPath.tmp" -Encoding UTF8
 			Remove-Item $ScriptPath
 			Move-Item "$ScriptPath.tmp" $ScriptPath
 		}
